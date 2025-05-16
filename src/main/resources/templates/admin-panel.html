@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Panel Admin Hackatón</title>
+    <meta charset="UTF-8">
+</head>
+<body>
+<h1>Panel de Administración</h1>
+
+<!-- Crear nuevo equipo -->
+<h2>Crear Nuevo Equipo</h2>
+<form th:action="@{/admin/create}" method="post">
+    Nombre del equipo:
+    <input type="text" name="name" required />
+    <button type="submit">Añadir equipo</button>
+</form>
+
+<hr>
+
+<!-- Editar todos los equipos en lote -->
+<h2>Equipos Registrados</h2>
+<form th:action="@{/admin/save}" th:object="${teamsWrapper}" method="post">
+    <table>
+        <tr>
+            <th>Nombre</th>
+            <th>Fase</th>
+            <th>Porcentaje</th>
+        </tr>
+        <tr th:each="team, stat : *{teams}">
+            <td>
+                <span th:text="*{teams[__${stat.index}__].name}"></span>
+                <input type="hidden" th:field="*{teams[__${stat.index}__].id}" />
+                <input type="hidden" th:field="*{teams[__${stat.index}__].name}" />
+            </td>
+            <td>
+                <select th:field="*{teams[__${stat.index}__].phase}">
+                    <option th:each="phase : ${phases}" th:value="${phase}" th:text="${phase}"></option>
+                </select>
+            </td>
+            <td>
+                <input type="number" min="0" max="100" th:field="*{teams[__${stat.index}__].percentage}" />
+            </td>
+        </tr>
+    </table>
+    <button type="submit">Guardar Cambios</button>
+</form>
+</body>
+</html>

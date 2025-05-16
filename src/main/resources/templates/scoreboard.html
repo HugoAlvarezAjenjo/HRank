@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Display Hackatón</title>
+    <meta charset="UTF-8" />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f4f4;
+            padding: 20px;
+        }
+        .team-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .team-name {
+            width: 150px;
+            font-weight: bold;
+        }
+        .progress-bar-container {
+            flex: 1;
+            background: #ddd;
+            height: 30px;
+            position: relative;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            color: white;
+            padding-left: 10px;
+            font-weight: bold;
+            border-radius: 6px 0 0 6px;
+            transition: width 0.5s ease;
+        }
+        .team-percentage {
+            width: 60px;
+            text-align: right;
+            margin-left: 10px;
+            font-weight: bold;
+        }
+    </style>
+
+    <!-- WebSocket / STOMP client -->
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+
+    <script>
+        let stompClient = null;
+
+        // Colores aleatorios para las barras (rotan si hay más equipos)
+        const colors = ["#4CAF50", "#2196F3", "#FF9800", "#9C27B0", "#E91E63", "#3F51B5", "#009688"];
+
+        // Establece conexión WebSocket
+        function connectWebSocket() {
+            const socket = new SockJS('/live-updates'); // endpoint que expusimos en WebSocketConfig
+            stompClient = Stomp.over(socket);
+
+            stompClient.connect({}, function (frame) {
+                // Nos suscribimos al canal de notificaciones
+                stompClient.subscribe('/topic/display-updates', function (message) {
+                    fetchTeams(); // Cada vez que hay un mensaje, refrescamos datos
+                });
+            });
+        }
+
+        // Obtiene los datos actuales de los equipos desde el backend
+        async function fetchTeams() {
+            const response = await fetch('/api/teams');
+            const teams = await response.json();
+
+            const container = document.getElementById('teamContainer');
+            container.innerHTML = ''; // Limpiar contenido actual
+
+            teams.forEach((team, index) => {
+                // Crear elementos HTML dinámicamente
+                const teamRow = document.createElement('div');
+                teamRow.className = 'team-row';
+
+                const nameDiv = document.createElement('div');
+                nameDiv.className = 'team-name';
+                nameDiv.textContent = team.name;
+
+                const barContainer = document.createElement('div');
+                barContainer.className = 'progress-bar-container';
+
+                const bar = document.createElement('div');
+                bar.className = 'progress-bar';
+                bar.style.width = team.percentage + '%';
+                bar.style.backgroundColor = colors[index % colors.length];
+                bar.textContent = team.phase;
+
+                const percentage = document.createElement('div');
+                percentage.className = 'team-percentage';
+                percentage.textContent = team.percentage + '%';
+
+                barContainer.appendChild(bar);
+                teamRow.appendChild(nameDiv);
+                teamRow.appendChild(barContainer);
+                teamRow.appendChild(percentage);
+
+                container.appendChild(teamRow);
+            });
+        }
+
+        // Ejecutar cuando cargue la página
+        window.onload = () => {
+            fetchTeams();      // Primera carga
+            connectWebSocket(); // Suscribirse a cambios en tiempo real
+        };
+    </script>
+</head>
+
+<body>
+<h1>Progreso de Equipos - Hackatón</h1>
+<div id="teamContainer"></div>
+</body>
+</html>
