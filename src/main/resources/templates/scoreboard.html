@@ -1,46 +1,28 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
 <head>
     <title>Display Hackatón</title>
-    <meta charset="UTF-8" />
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f4f4f4;
-            padding: 20px;
+        .gradient-bg {
+            background: linear-gradient(135deg, #6b73ff 0%, #000dff 100%);
         }
-        .team-row {
-            display: flex;
-            align-items: center;
-            margin-bottom: 20px;
+
+        .progress-bar-animate {
+            transition: width 0.5s ease, background-color 0.3s ease;
         }
-        .team-name {
-            width: 150px;
-            font-weight: bold;
+
+        .compact-view {
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
         }
-        .progress-bar-container {
-            flex: 1;
-            background: #ddd;
-            height: 30px;
-            position: relative;
-            border-radius: 6px;
-            overflow: hidden;
-        }
-        .progress-bar {
-            height: 100%;
-            display: flex;
-            align-items: center;
-            color: white;
-            padding-left: 10px;
-            font-weight: bold;
-            border-radius: 6px 0 0 6px;
-            transition: width 0.5s ease;
-        }
-        .team-percentage {
-            width: 60px;
-            text-align: right;
-            margin-left: 10px;
-            font-weight: bold;
+
+        @media (max-width: 768px) {
+            .compact-view {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 
@@ -50,72 +32,180 @@
 
     <script>
         let stompClient = null;
-
-        // Colores aleatorios para las barras (rotan si hay más equipos)
         const colors = ["#4CAF50", "#2196F3", "#FF9800", "#9C27B0", "#E91E63", "#3F51B5", "#009688"];
+        const phaseColors = {
+            "INICIO": "#9C27B0",
+            "DESARROLLO": "#2196F3",
+            "PRUEBAS": "#FF9800",
+            "FINALIZADO": "#4CAF50"
+        };
 
-        // Establece conexión WebSocket
         function connectWebSocket() {
-            const socket = new SockJS('/live-updates'); // endpoint que expusimos en WebSocketConfig
+            const socket = new SockJS('/live-updates');
             stompClient = Stomp.over(socket);
-
             stompClient.connect({}, function (frame) {
-                // Nos suscribimos al canal de notificaciones
                 stompClient.subscribe('/topic/display-updates', function (message) {
-                    fetchTeams(); // Cada vez que hay un mensaje, refrescamos datos
+                    fetchTeams();
                 });
             });
         }
 
-        // Obtiene los datos actuales de los equipos desde el backend
         async function fetchTeams() {
             const response = await fetch('/api/teams');
             const teams = await response.json();
-
             const container = document.getElementById('teamContainer');
-            container.innerHTML = ''; // Limpiar contenido actual
 
-            teams.forEach((team, index) => {
-                // Crear elementos HTML dinámicamente
-                const teamRow = document.createElement('div');
-                teamRow.className = 'team-row';
+            // Clear only if we have new teams to avoid flickering
+            if (teams.length > 0) {
+                container.innerHTML = '';
 
-                const nameDiv = document.createElement('div');
-                nameDiv.className = 'team-name';
-                nameDiv.textContent = team.name;
+                // Create a grid container for compact view
+                const gridContainer = document.createElement('div');
+                gridContainer.className = 'compact-view grid gap-4 p-4';
 
-                const barContainer = document.createElement('div');
-                barContainer.className = 'progress-bar-container';
+                teams.forEach((team, index) => {
+                    const card = document.createElement('div');
+                    card.className = 'bg-white rounded-lg shadow-md overflow-hidden';
 
-                const bar = document.createElement('div');
-                bar.className = 'progress-bar';
-                bar.style.width = team.percentage + '%';
-                bar.style.backgroundColor = colors[index % colors.length];
-                bar.textContent = team.phase;
+                    // Team header with name and percentage
+                    const header = document.createElement('div');
+                    header.className = 'flex justify-between items-center p-4 bg-gray-50 border-b';
 
-                const percentage = document.createElement('div');
-                percentage.className = 'team-percentage';
-                percentage.textContent = team.percentage + '%';
+                    const nameDiv = document.createElement('div');
+                    nameDiv.className = 'font-bold text-lg text-gray-800 truncate';
+                    nameDiv.textContent = team.name;
 
-                barContainer.appendChild(bar);
-                teamRow.appendChild(nameDiv);
-                teamRow.appendChild(barContainer);
-                teamRow.appendChild(percentage);
+                    const percentage = document.createElement('div');
+                    percentage.className = 'bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold';
+                    percentage.textContent = team.percentage + '%';
 
-                container.appendChild(teamRow);
-            });
+                    header.appendChild(nameDiv);
+                    header.appendChild(percentage);
+
+                    // Progress bar
+                    const barContainer = document.createElement('div');
+                    barContainer.className = 'p-4';
+
+                    const phaseLabel = document.createElement('div');
+                    phaseLabel.className = 'flex justify-between mb-2 text-sm';
+
+                    const phaseText = document.createElement('span');
+                    phaseText.className = 'font-medium';
+                    phaseText.textContent = team.phase;
+
+                    const timeText = document.createElement('span');
+                    timeText.className = 'text-gray-500';
+                    timeText.textContent = 'Actualizado: ' + new Date().toLocaleTimeString();
+
+                    phaseLabel.appendChild(phaseText);
+                    phaseLabel.appendChild(timeText);
+
+                    const barOuter = document.createElement('div');
+                    barOuter.className = 'w-full bg-gray-200 rounded-full h-4';
+
+                    const barInner = document.createElement('div');
+                    barInner.className = 'progress-bar-animate h-4 rounded-full';
+                    barInner.style.width = team.percentage + '%';
+                    barInner.style.backgroundColor = phaseColors[team.phase] || colors[index % colors.length];
+
+                    barOuter.appendChild(barInner);
+                    barContainer.appendChild(phaseLabel);
+                    barContainer.appendChild(barOuter);
+
+                    // Assemble card
+                    card.appendChild(header);
+                    card.appendChild(barContainer);
+                    gridContainer.appendChild(card);
+                });
+
+                container.appendChild(gridContainer);
+
+                // Animate progress bars
+                setTimeout(() => {
+                    document.querySelectorAll('.progress-bar-animate').forEach(bar => {
+                        bar.style.transition = 'width 0.5s ease';
+                    });
+                }, 100);
+            }
         }
 
-        // Ejecutar cuando cargue la página
         window.onload = () => {
-            fetchTeams();      // Primera carga
-            connectWebSocket(); // Suscribirse a cambios en tiempo real
+            fetchTeams();
+            connectWebSocket();
         };
     </script>
 </head>
 
-<body>
-<h1>Progreso de Equipos - Hackatón</h1>
-<div id="teamContainer"></div>
+<body class="bg-gray-100 min-h-screen">
+<!-- Header with dual logos -->
+<header class="gradient-bg text-white shadow-lg">
+    <div class="container mx-auto px-4 py-6">
+        <div class="flex flex-col md:flex-row justify-between items-center">
+            <div class="flex items-center mb-4 md:mb-0">
+                <!-- First logo placeholder -->
+                <div class="bg-white rounded-lg m-2 flex items-center justify-center w-16 h-16">
+                    <img th:src="@{/img/NextDigitalLogo.jpg}" alt="Logo" class="rounded object-contain" />
+                </div>
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-bold">Progreso de Equipos</h1>
+                    <p class="text-blue-100">Hackatón Next - UPM 2025 </p>
+                </div>
+            </div>
+
+            <!-- Second logo placeholder -->
+            <div class="bg-white rounded-lg m-2 flex items-center justify-center w-16 h-16">
+                <img th:src="@{/img/EtsisiLogo.png}" alt="Logo" class="rounded object-contain" />
+            </div>
+        </div>
+    </div>
+</header>
+
+<main class="container mx-auto px-4 py-8">
+    <!-- Stats bar -->
+    <div class="bg-white rounded-lg shadow-md p-4 mb-8">
+        <div class="flex flex-wrap justify-between items-center">
+            <div class="flex items-center mb-2 sm:mb-0">
+                <i class="fas fa-users text-blue-500 mr-2"></i>
+                <span class="font-medium">Equipos activos: <span id="teamCount" class="font-bold">0</span></span>
+            </div>
+            <div class="flex items-center mb-2 sm:mb-0">
+                <i class="fas fa-chart-line text-green-500 mr-2"></i>
+                <span class="font-medium">Progreso promedio: <span id="avgProgress" class="font-bold">0%</span></span>
+            </div>
+            <div class="flex items-center">
+                <i class="fas fa-clock text-orange-500 mr-2"></i>
+                <span class="font-medium">Última actualización: <span id="lastUpdate" class="font-bold">--:--:--</span></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Teams display - content will be injected by JavaScript -->
+    <div id="teamContainer" class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="p-8 text-center text-gray-500">
+            <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+            <p>Cargando datos de equipos...</p>
+        </div>
+    </div>
+</main>
+
+<script>
+    // Enhance the fetchTeams function to update stats
+    const originalFetchTeams = fetchTeams;
+    fetchTeams = async function () {
+        const response = await fetch('/api/teams');
+        const teams = await response.json();
+
+        // Update stats
+        if (teams.length > 0) {
+            document.getElementById('teamCount').textContent = teams.length;
+            const avg = teams.reduce((sum, team) => sum + parseInt(team.percentage), 0) / teams.length;
+            document.getElementById('avgProgress').textContent = Math.round(avg) + '%';
+            document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+        }
+
+        // Call original function
+        return originalFetchTeams.apply(this, arguments);
+    };
+</script>
 </body>
 </html>
