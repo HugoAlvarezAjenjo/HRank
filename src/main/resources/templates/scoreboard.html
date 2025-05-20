@@ -32,13 +32,19 @@
 
     <script>
         let stompClient = null;
-        const colors = ["#4CAF50", "#2196F3", "#FF9800", "#9C27B0", "#E91E63", "#3F51B5", "#009688"];
-        const phaseColors = {
-            "INICIO": "#9C27B0",
-            "DESARROLLO": "#2196F3",
-            "PRUEBAS": "#FF9800",
-            "FINALIZADO": "#4CAF50"
-        };
+        const colors = ["#4CAF50",
+            "#2196F3",
+            "#FF9800",
+            "#9C27B0",
+            "#E91E63",
+            "#3F51B5",
+            "#009688"];
+        // const phaseColors = {
+        //     "INICIO": "#9C27B0",
+        //     "DESARROLLO": "#2196F3",
+        //     "PRUEBAS": "#FF9800",
+        //     "FINALIZADO": "#4CAF50"
+        // };
 
         function connectWebSocket() {
             const socket = new SockJS('/live-updates');
@@ -93,12 +99,7 @@
                     phaseText.className = 'font-medium';
                     phaseText.textContent = team.phase;
 
-                    const timeText = document.createElement('span');
-                    timeText.className = 'text-gray-500';
-                    timeText.textContent = 'Actualizado: ' + new Date().toLocaleTimeString();
-
                     phaseLabel.appendChild(phaseText);
-                    phaseLabel.appendChild(timeText);
 
                     const barOuter = document.createElement('div');
                     barOuter.className = 'w-full bg-gray-200 rounded-full h-4';
@@ -106,7 +107,7 @@
                     const barInner = document.createElement('div');
                     barInner.className = 'progress-bar-animate h-4 rounded-full';
                     barInner.style.width = team.percentage + '%';
-                    barInner.style.backgroundColor = phaseColors[team.phase] || colors[index % colors.length];
+                    barInner.style.backgroundColor = colors[index % colors.length]; // phaseColors[team.phase] || colors[index % colors.length];
 
                     barOuter.appendChild(barInner);
                     barContainer.appendChild(phaseLabel);
