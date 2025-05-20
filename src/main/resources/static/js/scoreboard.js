@@ -1,95 +1,106 @@
+// ========== Configuración Inicial ==========
 let stompClient = null;
+
+// Colores para las barras de progreso (uno por equipo)
 const colors = ["#4CAF50", "#2196F3", "#FF9800", "#9C27B0", "#E91E63", "#3F51B5", "#009688"];
 
+// ========== Conexión WebSocket ==========
+// Se conecta al endpoint del backend y se suscribe a las actualizaciones
 function connectWebSocket() {
     const socket = new SockJS('/live-updates');
     stompClient = Stomp.over(socket);
-    stompClient.connect({}, function () {
+
+    stompClient.connect({}, function (frame) {
         stompClient.subscribe('/topic/display-updates', function () {
-            fetchTeams();
+            fetchTeams(); // Cuando llega un mensaje, se actualizan los equipos
         });
     });
 }
 
+// ========== Función para obtener y mostrar equipos ==========
 async function fetchTeams() {
     const response = await fetch('/api/teams');
     const teams = await response.json();
 
-    // === Actualizar estadísticas ===
+    // Actualiza estadísticas (contadores y tiempo)
     if (teams.length > 0) {
         document.getElementById('teamCount').textContent = teams.length;
+
         const avg = teams.reduce((sum, team) => sum + parseInt(team.percentage), 0) / teams.length;
         document.getElementById('avgProgress').textContent = Math.round(avg) + '%';
         document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
     }
 
-    // === Actualizar visualización de equipos ===
     const container = document.getElementById('teamContainer');
-    container.innerHTML = '';
 
-    const gridContainer = document.createElement('div');
-    gridContainer.className = 'compact-view grid gap-4 p-4';
+    if (teams.length > 0) {
+        container.innerHTML = '';
 
-    teams.forEach((team, index) => {
-        const card = document.createElement('div');
-        card.className = 'bg-white rounded-lg shadow-md overflow-hidden';
+        const gridContainer = document.createElement('div');
+        gridContainer.className = 'compact-view grid gap-4 p-4';
 
-        // Header
-        const header = document.createElement('div');
-        header.className = 'flex justify-between items-center p-4 bg-gray-50 border-b';
+        teams.forEach((team, index) => {
+            const card = document.createElement('div');
+            card.className = 'bg-white rounded-lg shadow-md overflow-hidden';
 
-        const nameDiv = document.createElement('div');
-        nameDiv.className = 'font-bold text-lg text-gray-800 truncate';
-        nameDiv.textContent = team.name;
+            // Header del equipo: nombre + porcentaje
+            const header = document.createElement('div');
+            header.className = 'flex justify-between items-center p-4 bg-gray-50 border-b';
 
-        const percentage = document.createElement('div');
-        percentage.className = 'bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold';
-        percentage.textContent = team.percentage + '%';
+            const nameDiv = document.createElement('div');
+            nameDiv.className = 'font-bold text-lg text-gray-800 truncate';
+            nameDiv.textContent = team.name;
 
-        header.appendChild(nameDiv);
-        header.appendChild(percentage);
+            const percentage = document.createElement('div');
+            percentage.className = 'bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold';
+            percentage.textContent = team.percentage + '%';
 
-        // Progress bar
-        const barContainer = document.createElement('div');
-        barContainer.className = 'p-4';
+            header.appendChild(nameDiv);
+            header.appendChild(percentage);
 
-        const phaseLabel = document.createElement('div');
-        phaseLabel.className = 'flex justify-between mb-2 text-sm';
+            // Barra de progreso
+            const barContainer = document.createElement('div');
+            barContainer.className = 'p-4';
 
-        const phaseText = document.createElement('span');
-        phaseText.className = 'font-medium';
-        phaseText.textContent = team.phase;
+            const phaseLabel = document.createElement('div');
+            phaseLabel.className = 'flex justify-between mb-2 text-sm';
 
-        phaseLabel.appendChild(phaseText);
+            const phaseText = document.createElement('span');
+            phaseText.className = 'font-medium';
+            phaseText.textContent = team.phase;
 
-        const barOuter = document.createElement('div');
-        barOuter.className = 'w-full bg-gray-200 rounded-full h-4';
+            phaseLabel.appendChild(phaseText);
 
-        const barInner = document.createElement('div');
-        barInner.className = 'progress-bar-animate h-4 rounded-full';
-        barInner.style.width = team.percentage + '%';
-        barInner.style.backgroundColor = colors[index % colors.length];
+            const barOuter = document.createElement('div');
+            barOuter.className = 'w-full bg-gray-200 rounded-full h-4';
 
-        barOuter.appendChild(barInner);
-        barContainer.appendChild(phaseLabel);
-        barContainer.appendChild(barOuter);
+            const barInner = document.createElement('div');
+            barInner.className = 'progress-bar-animate h-4 rounded-full';
+            barInner.style.width = team.percentage + '%';
+            barInner.style.backgroundColor = colors[index % colors.length];
 
-        card.appendChild(header);
-        card.appendChild(barContainer);
-        gridContainer.appendChild(card);
-    });
+            barOuter.appendChild(barInner);
+            barContainer.appendChild(phaseLabel);
+            barContainer.appendChild(barOuter);
 
-    container.appendChild(gridContainer);
-
-    // Animación
-    setTimeout(() => {
-        document.querySelectorAll('.progress-bar-animate').forEach(bar => {
-            bar.style.transition = 'width 0.5s ease';
+            // Montaje de la tarjeta
+            card.appendChild(header);
+            card.appendChild(barContainer);
+            gridContainer.appendChild(card);
         });
-    }, 100);
+
+        container.appendChild(gridContainer);
+
+        // Animación de barras
+        setTimeout(() => {
+            document.querySelectorAll('.progress-bar-animate').forEach(bar => {
+                bar.style.transition = 'width 0.5s ease';
+            });
+        }, 100);
+    }
 }
 
-// Ejecutar todo cuando la página cargue
+// ========== Inicio del script ==========
 window.onload = () => {
     fetchTeams();
     connectWebSocket();
