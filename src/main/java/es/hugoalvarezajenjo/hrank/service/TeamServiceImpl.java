@@ -29,4 +29,9 @@ public class TeamServiceImpl implements TeamService{
                 this.teamMapper.toEntity(team)
         );
     }
+
+    @Override
+    public void deleteById(final Long id) {
+        this.teamRepository.deleteById(id);
+    }
 }

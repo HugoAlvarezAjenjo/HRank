@@ -9,4 +9,6 @@ public interface TeamService {
     List<Team> findAll();
 
     void save(Team team);
+
+    void deleteById(Long id);
 }

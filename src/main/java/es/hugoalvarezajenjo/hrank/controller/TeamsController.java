@@ -8,10 +8,7 @@ import es.hugoalvarezajenjo.hrank.service.TeamService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 
 @Controller
 @RequestMapping("/admin")
@@ -33,7 +30,7 @@ public class TeamsController {
         for (Team team : teamsWrapper.getTeams()) {
             this.teamService.save(team);
         }
-        notificationService.notifyDisplaysToUpdate();
+        this.notificationService.notifyDisplaysToUpdate();
         return "redirect:/admin";
     }
 
@@ -42,7 +39,20 @@ public class TeamsController {
         team.setPercentage(0);
         team.setPhase(ProgressPhase.REQUISITOS);
         this.teamService.save(team);
-        notificationService.notifyDisplaysToUpdate();
+        this.notificationService.notifyDisplaysToUpdate();
         return "redirect:/admin";
+    }
+
+    @GetMapping("/delete")
+    public String deleteTeamForm(final Model model) {
+        model.addAttribute("teams", this.teamService.findAll());
+        return "admin-delete";
+    }
+
+    @PostMapping("/delete/{id}")
+    public String deleteTeam(@PathVariable Long id) {
+        this.teamService.deleteById(id);
+        this.notificationService.notifyDisplaysToUpdate();
+        return "redirect:/admin/delete";
     }
 }
