@@ -8,6 +8,8 @@ public interface TeamService {
 
     List<Team> findAll();
 
+    Team findByAccessKey(String accessKey);
+
     void save(Team team);
 
     void deleteById(Long id);

@@ -13,6 +13,7 @@ function connectWebSocket() {
     stompClient.connect({}, function (frame) {
         stompClient.subscribe('/topic/display-updates', function () {
             fetchTeams(); // Cuando llega un mensaje, se actualizan los equipos
+            fetchConfig(); // También refrescar la configuración (título, tiempo fin)
         });
     });
 }
@@ -100,8 +101,66 @@ async function fetchTeams() {
     }
 }
 
+// ========== Configuración de Competición ==========
+let competitionConfig = null;
+
+async function fetchConfig() {
+    try {
+        const response = await fetch('/api/config');
+        competitionConfig = await response.json();
+
+        // Actualizar título dinámicamente si existe el elemento
+        const titleEl = document.querySelector('h1.font-bold');
+        if (titleEl && competitionConfig.title) {
+            titleEl.textContent = competitionConfig.title;
+        }
+
+        updateCountdown();
+    } catch (e) {
+        console.error("Error fetching config", e);
+    }
+}
+
+function updateCountdown() {
+    if (!competitionConfig || !competitionConfig.endTime) return;
+
+    const end = new Date(competitionConfig.endTime).getTime();
+    const now = new Date().getTime();
+
+    const countdownElement = document.getElementById('countdown');
+
+    const distance = end - now;
+
+    if (distance < 0) {
+        countdownElement.textContent = "¡FINALIZADO!";
+        countdownElement.className = "font-bold text-lg text-red-600 animate-pulse uppercase";
+        return;
+    }
+
+    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+    countdownElement.textContent =
+        (hours < 10 ? "0" + hours : hours) + ":" +
+        (minutes < 10 ? "0" + minutes : minutes) + ":" +
+        (seconds < 10 ? "0" + seconds : seconds);
+
+    if (distance < 1000 * 60 * 15) { // Últimos 15 min en rojo
+        countdownElement.className = "font-bold text-lg text-red-600";
+    } else {
+        countdownElement.className = "font-bold text-lg text-indigo-700";
+    }
+}
+
 // ========== Inicio del script ==========
 window.onload = () => {
     fetchTeams();
+    fetchConfig();
     connectWebSocket();
+
+    // Actualizar cada segundo
+    setInterval(updateCountdown, 1000);
+    // Refrescar configuración cada minuto (por si el admin la cambia)
+    setInterval(fetchConfig, 60000);
 };

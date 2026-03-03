@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class TeamServiceImpl implements TeamService{
+public class TeamServiceImpl implements TeamService {
     private final TeamRepository teamRepository;
     private final TeamMapper teamMapper;
 
@@ -24,10 +24,19 @@ public class TeamServiceImpl implements TeamService{
     }
 
     @Override
+    public Team findByAccessKey(String accessKey) {
+        return teamRepository.findByAccessKey(accessKey)
+                .map(teamMapper::toModel)
+                .orElse(null);
+    }
+
+    @Override
     public void save(final Team team) {
+        if (team.getAccessKey() == null || team.getAccessKey().isEmpty()) {
+            team.setAccessKey(java.util.UUID.randomUUID().toString().substring(0, 8));
+        }
         this.teamRepository.save(
-                this.teamMapper.toEntity(team)
-        );
+                this.teamMapper.toEntity(team));
     }
 
     @Override

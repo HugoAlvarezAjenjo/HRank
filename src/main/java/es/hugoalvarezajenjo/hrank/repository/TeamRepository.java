@@ -6,4 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface TeamRepository extends JpaRepository<TeamEntity, Long> {
+    java.util.Optional<TeamEntity> findByAccessKey(String accessKey);
 }

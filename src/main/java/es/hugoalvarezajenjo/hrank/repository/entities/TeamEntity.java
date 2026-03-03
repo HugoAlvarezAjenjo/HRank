@@ -11,6 +11,10 @@ public class TeamEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String name;
+
+    @Column(unique = true)
+    private String accessKey;
+
     private int percentage;
     @Enumerated(EnumType.STRING)
     private ProgressPhase phase;

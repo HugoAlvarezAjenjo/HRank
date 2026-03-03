@@ -6,6 +6,7 @@ import lombok.Data;
 public class Team {
     private Long id;
     private String name;
+    private String accessKey;
     private int percentage;
     private ProgressPhase phase;
 }

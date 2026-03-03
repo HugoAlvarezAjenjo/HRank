@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Equipo - HRank</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body class="bg-gray-50 min-h-screen">
+    <div class="max-w-md mx-auto p-4 pt-12">
+        <div class="bg-white rounded-3xl shadow-xl overflow-hidden">
+            <!-- Header -->
+            <div class="bg-blue-600 p-8 text-white text-center">
+                <div class="inline-flex items-center justify-center w-16 h-16 bg-white/20 rounded-2xl mb-4">
+                    <i class="fas fa-users text-3xl"></i>
+                </div>
+                <h1 class="text-2xl font-black" th:text="${team.name}">Nombre Equipo</h1>
+                <p class="text-blue-100 opacity-80 text-sm mt-1">Panel de control de equipo</p>
+            </div>
+
+            <!-- Content -->
+            <div class="p-8">
+                <form th:action="@{/team/{key}/update(key=${team.accessKey})}" method="post" th:object="${team}"
+                    class="space-y-8">
+                    <!-- Phase Selection -->
+                    <div>
+                        <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-4">Fase
+                            Actual</label>
+                        <div class="grid grid-cols-1 gap-3">
+                            <label th:each="phase : ${phases}" class="relative cursor-pointer">
+                                <input type="radio" th:field="*{phase}" th:value="${phase}" class="peer sr-only">
+                                <div
+                                    class="px-5 py-4 border-2 border-gray-100 rounded-2xl peer-checked:border-blue-600 peer-checked:bg-blue-50 transition-all">
+                                    <div class="flex items-center justify-between">
+                                        <span class="font-bold text-gray-700" th:text="${phase}">Fase</span>
+                                        <i
+                                            class="fas fa-check-circle text-blue-600 opacity-0 peer-checked:opacity-100 transition-opacity"></i>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Percentage Slider -->
+                    <div>
+                        <div class="flex justify-between items-end mb-4">
+                            <label
+                                class="block text-xs font-black text-gray-400 uppercase tracking-widest">Progreso</label>
+                            <span class="text-3xl font-black text-blue-600"><span id="pctDisplay"
+                                    th:text="*{percentage}">0</span>%</span>
+                        </div>
+                        <input type="range" th:field="*{percentage}" min="0" max="100" step="1"
+                            class="w-full h-3 bg-gray-100 rounded-full appearance-none cursor-pointer accent-blue-600"
+                            oninput="document.getElementById('pctDisplay').innerText = this.value">
+                    </div>
+
+                    <!-- Submit -->
+                    <button type="submit"
+                        class="w-full py-5 bg-gray-900 text-white font-black rounded-2xl shadow-xl hover:bg-black transition-all transform active:scale-95 flex items-center justify-center">
+                        ACTUALIZAR PROGRESO
+                        <i class="fas fa-sync-alt ml-3"></i>
+                    </button>
+
+                    <div th:if="${param.success}"
+                        class="bg-green-100 text-green-700 p-4 rounded-xl text-center font-bold animate-bounce mt-4">
+                        <i class="fas fa-check-circle mr-2"></i> ¡Actualizado correctamente!
+                    </div>
+                </form>
+
+                <div class="mt-8 pt-8 border-t border-gray-50 text-center">
+                    <a th:href="@{/scoreboard}" class="text-sm font-bold text-blue-600 hover:underline">
+                        <i class="fas fa-external-link-alt mr-1"></i> Ver marcador en vivo
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
