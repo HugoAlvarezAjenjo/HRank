@@ -38,8 +38,10 @@ public class TeamsController {
 
     @PostMapping("/save")
     public String updateAllTeams(@ModelAttribute TeamsWrapper teamsWrapper) {
-        for (Team team : teamsWrapper.getTeams()) {
-            this.teamService.save(team);
+        if (teamsWrapper.getTeams() != null) {
+            for (Team team : teamsWrapper.getTeams()) {
+                this.teamService.save(team);
+            }
         }
         this.notificationService.notifyDisplaysToUpdate();
         return "redirect:/admin";
@@ -58,6 +60,13 @@ public class TeamsController {
     public String deleteTeamForm(final Model model) {
         model.addAttribute("teams", this.teamService.findAll());
         return "admin-delete";
+    }
+
+    @PostMapping("/delete-team/{id}")
+    public String deleteTeamFromPanel(@PathVariable Long id) {
+        this.teamService.deleteById(id);
+        this.notificationService.notifyDisplaysToUpdate();
+        return "redirect:/admin";
     }
 
     @PostMapping("/delete/{id}")
